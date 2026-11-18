@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { configured, staffLoginEmail, supabase } from './supabase';
 import { useData, type DataApi } from './useData';
 import { GuestsView } from './components/GuestsView';
-import { MapsView } from './components/MapsView';
+import { MapsView, type MapFocus } from './components/MapsView';
 import { GuestForm } from './components/GuestForm';
 import { Login } from './components/Login';
 
@@ -79,9 +79,20 @@ function StaffCheck({ session }: { session: Session }) {
   return <Main />;
 }
 
-function Main() {
+export function Main() {
   const data = useData(true);
   const [tab, setTab] = useState<Tab>('guests');
+  const [focus, setFocus] = useState<MapFocus | null>(null);
+  // Normal tab taps clear any pending "show this table" request.
+  const selectTab = (t: Tab) => {
+    setFocus(null);
+    setTab(t);
+  };
+  // Guest tapped on the Guests tab -> Dining Maps, that room, that table.
+  const locate = (tableId: string, guestId: string) => {
+    setFocus({ tableId, guestId, nonce: Date.now() });
+    setTab('maps');
+  };
   return (
     <div className="app">
       <Header data={data} />
@@ -92,8 +103,8 @@ function Main() {
             <button className="btn btn-small" onClick={() => void data.refresh()}>Retry</button>
           </div>
         )}
-        {tab === 'guests' && <GuestsView data={data} />}
-        {tab === 'maps' && <MapsView data={data} />}
+        {tab === 'guests' && <GuestsView data={data} onLocate={locate} />}
+        {tab === 'maps' && <MapsView data={data} focus={focus} />}
         {tab === 'add' && (
           <section>
             <h2>Add guest</h2>
@@ -102,13 +113,13 @@ function Main() {
         )}
       </main>
       <nav className="tabs" aria-label="Main">
-        <button className={tab === 'guests' ? 'on' : ''} onClick={() => setTab('guests')} aria-current={tab === 'guests'}>
+        <button className={tab === 'guests' ? 'on' : ''} onClick={() => selectTab('guests')} aria-current={tab === 'guests'}>
           <span aria-hidden="true">👥</span>Guests
         </button>
-        <button className={tab === 'maps' ? 'on' : ''} onClick={() => setTab('maps')} aria-current={tab === 'maps'}>
+        <button className={tab === 'maps' ? 'on' : ''} onClick={() => selectTab('maps')} aria-current={tab === 'maps'}>
           <span aria-hidden="true">🗺️</span>Dining Maps
         </button>
-        <button className={tab === 'add' ? 'on' : ''} onClick={() => setTab('add')} aria-current={tab === 'add'}>
+        <button className={tab === 'add' ? 'on' : ''} onClick={() => selectTab('add')} aria-current={tab === 'add'}>
           <span aria-hidden="true">➕</span>Add Guest
         </button>
       </nav>

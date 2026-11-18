@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { DataApi } from '../useData';
-import { computeStats, searchGuests } from '../logic';
+import { computeStats, guestLabel, searchGuests } from '../logic';
 import type { Guest } from '../types';
 import { GuestRow } from './GuestRow';
 import { GuestForm } from './GuestForm';
@@ -8,10 +8,23 @@ import { Modal } from './Modal';
 
 type Filter = 'all' | 'waiting' | 'arrived';
 
-export function GuestsView({ data }: { data: DataApi }) {
+export function GuestsView({ data, onLocate }: { data: DataApi; onLocate: (tableId: string, guestId: string) => void }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [editing, setEditing] = useState<Guest | null>(null);
+  const [notice, setNotice] = useState('');
+
+  // Tap a guest -> show their table on the map. Uses the freshest copy of the guest.
+  const locate = (g: Guest) => {
+    const live = data.guestMap[g.id] ?? g;
+    const table = data.tableById.get(live.table_id);
+    if (!table || !data.areaById.has(table.area_id)) {
+      setNotice(`${guestLabel(live)} has no table on the map (assignment: "${live.table_id}"). Tap Edit to choose a table.`);
+      return;
+    }
+    setNotice('');
+    onLocate(table.id, live.id);
+  };
 
   const stats = useMemo(() => computeStats(data.guests, data.tables, data.areas), [data.guests, data.tables, data.areas]);
   const list = useMemo(() => {
@@ -57,6 +70,12 @@ export function GuestsView({ data }: { data: DataApi }) {
         ))}
       </div>
 
+      {notice && (
+        <div className="banner banner-warn" role="status">
+          {notice}
+        </div>
+      )}
+
       {!data.loaded ? (
         <p className="empty">Loading guests…</p>
       ) : list.length === 0 ? (
@@ -64,7 +83,7 @@ export function GuestsView({ data }: { data: DataApi }) {
       ) : (
         <ul className="guest-list">
           {list.map((g) => (
-            <GuestRow key={g.id} g={g} data={data} onEdit={setEditing} />
+            <GuestRow key={g.id} g={g} data={data} onEdit={setEditing} onOpen={locate} />
           ))}
         </ul>
       )}

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { DataApi } from '../useData';
 import { guestLabel } from '../logic';
 import type { Guest } from '../types';
@@ -7,19 +8,53 @@ interface Props {
   data: DataApi;
   onEdit: (g: Guest) => void;
   showTable?: boolean;
+  /** Tap on the name/row (not on a button) — used to jump to the map. */
+  onOpen?: (g: Guest) => void;
+  highlight?: boolean;
 }
 
 const timeOf = (iso: string | null) =>
   iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
 
-export function GuestRow({ g, data, onEdit, showTable = true }: Props) {
+export function GuestRow({ g, data, onEdit, showTable = true, onOpen, highlight = false }: Props) {
+  const ref = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (highlight) ref.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [highlight]);
   const saving = data.saving.has(g.id);
   const issue = data.issues[g.id];
   const table = data.tableById.get(g.table_id);
   const room = table ? data.areaById.get(table.area_id)?.name : '';
   return (
-    <li className={`guest ${g.checked_in ? 'arrived' : 'waiting'}`}>
-      <div className="guest-main">
+    <li
+      ref={ref}
+      className={`guest ${g.checked_in ? 'arrived' : 'waiting'}${highlight ? ' guest-focus' : ''}${onOpen ? ' tappable' : ''}`}
+      onClick={
+        onOpen
+          ? (e) => {
+              // Clicks on Check In / Undo / Edit / Retry never navigate.
+              if ((e.target as HTMLElement).closest('button')) return;
+              onOpen(g);
+            }
+          : undefined
+      }
+    >
+      <div
+        className="guest-main"
+        {...(onOpen
+          ? {
+              role: 'button',
+              tabIndex: 0,
+              'aria-label': `Show ${guestLabel(g)} on the map`,
+              onKeyDown: (e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onOpen(g);
+                }
+              },
+            }
+          : {})}
+      >
         <div className="guest-name">{guestLabel(g)}</div>
         {showTable && (
           <div className="guest-meta">

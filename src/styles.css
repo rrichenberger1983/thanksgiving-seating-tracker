@@ -84,6 +84,9 @@ h2 { font-size: 1.25rem; margin: .25rem 0 .75rem; }
 .guest { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; border: 2px solid var(--line); border-left-width: 10px; border-radius: 12px; padding: .6rem .8rem; }
 .guest.arrived { border-left-color: var(--ok); background: #f1fbf4; }
 .guest.waiting { border-left-color: var(--wait); }
+.guest.tappable { cursor: pointer; }
+.guest-main[role='button'] { flex: 1 1 140px; min-height: 44px; }
+.guest-focus { outline: 4px solid #5b00d6; outline-offset: 2px; }
 .guest-name { font-size: 1.3rem; font-weight: 800; }
 .guest-meta { color: var(--muted); font-size: .95rem; }
 .badge { display: inline-block; margin-top: .2rem; padding: .1rem .55rem; border-radius: 6px; font-size: .85rem; font-weight: 800; }
@@ -122,14 +125,18 @@ h2 { font-size: 1.25rem; margin: .25rem 0 .75rem; }
 .feat { stroke: #444; stroke-linecap: round; }
 .feat-text { fill: #444; font-weight: 700; }
 .tbl { cursor: pointer; }
-.tbl rect, .tbl circle { stroke: #111; stroke-width: 5; }
-.tbl.empty rect, .tbl.empty circle { fill: #f1f3f5; }
-.tbl.open rect, .tbl.open circle { fill: #ffd54a; }
-.tbl.done rect, .tbl.done circle { fill: #6fdc8c; }
+.tbl > rect, .tbl > circle { stroke: #111; stroke-width: 5; }
+.tbl.empty > rect, .tbl.empty > circle { fill: #f1f3f5; }
+.tbl.open > rect, .tbl.open > circle { fill: #ffd54a; }
+.tbl.done > rect, .tbl.done > circle { fill: #6fdc8c; }
 .tbl-num { font-weight: 900; fill: #111; pointer-events: none; }
 .tbl-count { font-weight: 800; fill: #111; pointer-events: none; }
-.tbl:focus-visible rect, .tbl:focus-visible circle { stroke: #ff8c00; stroke-width: 10; }
+.tbl:focus-visible > rect, .tbl:focus-visible > circle { stroke: #ff8c00; stroke-width: 10; }
 
+.hl-halo { fill: none; stroke: #fff; stroke-width: 28; }
+.hl-ring { fill: none; stroke: #5b00d6; stroke-width: 14; animation: hl-pulse 1.4s ease-in-out infinite; }
+@keyframes hl-pulse { 50% { stroke-width: 22; } }
+.table-chip.located { outline: 4px solid #5b00d6; outline-offset: 2px; }
 .table-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: .5rem; }
 .table-chip { min-height: 64px; border: 2px solid var(--line); border-radius: 12px; display: grid; place-items: center; font-weight: 800; }
 .table-chip span { font-weight: 700; }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DataApi } from '../useData';
 import { countsByTable, searchGuests } from '../logic';
 import type { Guest } from '../types';
@@ -7,10 +7,39 @@ import { GuestRow } from './GuestRow';
 import { GuestForm } from './GuestForm';
 import { Modal } from './Modal';
 
-export function MapsView({ data }: { data: DataApi }) {
-  const [areaId, setAreaId] = useState<string>('');
+export interface MapFocus {
+  tableId: string;
+  guestId?: string;
+  nonce: number;
+}
+
+export function MapsView({ data, focus = null }: { data: DataApi; focus?: MapFocus | null }) {
+  const focusTable = focus ? data.tableById.get(focus.tableId) : undefined;
+  const [areaId, setAreaId] = useState<string>(focusTable?.area_id ?? '');
   const [mode, setMode] = useState<'map' | 'list'>('map');
-  const [openTable, setOpenTable] = useState<string | null>(null);
+  const [openTable, setOpenTable] = useState<string | null>(focusTable ? focusTable.id : null);
+  const [highlight, setHighlight] = useState<string | null>(focusTable ? focusTable.id : null);
+  const [focusGuest, setFocusGuest] = useState<string | null>(focusTable ? (focus?.guestId ?? null) : null);
+
+  // A new request from the Guests list: show that room/table. A missing table is ignored (stays put).
+  useEffect(() => {
+    if (!focus) return;
+    const t = data.tableById.get(focus.tableId);
+    if (!t) return;
+    setAreaId(t.area_id);
+    setMode('map');
+    setHighlight(t.id);
+    setFocusGuest(focus.guestId ?? null);
+    setOpenTable(t.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.nonce]);
+
+  // Normal table tap. Selecting a different table clears the located-table outline.
+  const selectTable = (id: string) => {
+    setHighlight((h) => (h === id ? h : null));
+    setFocusGuest(null);
+    setOpenTable(id);
+  };
 
   const counts = useMemo(() => countsByTable(data.guests), [data.guests]);
   const area = data.areas.find((a) => a.id === areaId) ?? data.areas[0];
@@ -53,14 +82,21 @@ export function MapsView({ data }: { data: DataApi }) {
       </div>
 
       {mode === 'map' ? (
-        <MapSvg area={area} tables={tables} counts={counts} onSelect={setOpenTable} />
+        <MapSvg
+          area={area}
+          tables={tables}
+          counts={counts}
+          onSelect={selectTable}
+          highlightId={highlight}
+          panTo={focus && focusTable?.area_id === area.id ? { tableId: focus.tableId, nonce: focus.nonce } : null}
+        />
       ) : (
         <div className="table-grid">
           {tables.map((t) => {
             const c = counts[t.id] ?? { assigned: 0, arrived: 0 };
             const state = c.assigned === 0 ? 'empty' : c.arrived === c.assigned ? 'done' : 'open';
             return (
-              <button key={t.id} className={`table-chip ${state}`} onClick={() => setOpenTable(t.id)}>
+              <button key={t.id} className={`table-chip ${state}${t.id === highlight ? ' located' : ''}`} onClick={() => selectTable(t.id)}>
                 <b>{t.id}</b>
                 <span>{c.arrived}/{c.assigned}</span>
               </button>
@@ -69,12 +105,22 @@ export function MapsView({ data }: { data: DataApi }) {
         </div>
       )}
 
-      {openTable && <TableSheet tableId={openTable} data={data} onClose={() => setOpenTable(null)} />}
+      {openTable && (
+        <TableSheet
+          tableId={openTable}
+          data={data}
+          focusGuestId={focusGuest}
+          onClose={() => {
+            setOpenTable(null);
+            setFocusGuest(null); // the table outline stays until another table is selected
+          }}
+        />
+      )}
     </section>
   );
 }
 
-function TableSheet({ tableId, data, onClose }: { tableId: string; data: DataApi; onClose: () => void }) {
+function TableSheet({ tableId, data, onClose, focusGuestId = null }: { tableId: string; data: DataApi; onClose: () => void; focusGuestId?: string | null }) {
   const [mode, setMode] = useState<'list' | 'add' | { edit: Guest }>('list');
   const table = data.tableById.get(tableId);
   const roomName = table ? data.areaById.get(table.area_id)?.name : '';
@@ -91,7 +137,7 @@ function TableSheet({ tableId, data, onClose }: { tableId: string; data: DataApi
           ) : (
             <ul className="guest-list">
               {here.map((g) => (
-                <GuestRow key={g.id} g={g} data={data} showTable={false} onEdit={(x) => setMode({ edit: x })} />
+                <GuestRow key={g.id} g={g} data={data} showTable={false} highlight={g.id === focusGuestId} onEdit={(x) => setMode({ edit: x })} />
               ))}
             </ul>
           )}

@@ -8,6 +8,10 @@ interface Props {
   tables: TableRow[];
   counts: Record<string, Counts>;
   onSelect: (tableId: string) => void;
+  /** Table to outline until the parent clears it. */
+  highlightId?: string | null;
+  /** Pan/zoom so this table is centered; re-runs whenever nonce changes. */
+  panTo?: { tableId: string; nonce: number } | null;
 }
 
 interface View { x: number; y: number; w: number }
@@ -26,7 +30,7 @@ function FeatureShape({ f }: { f: Feature }) {
   }
 }
 
-export function MapSvg({ area, tables, counts, onSelect }: Props) {
+export function MapSvg({ area, tables, counts, onSelect, highlightId = null, panTo = null }: Props) {
   const room = ROOM_VIEWS[area.id] ?? DEFAULT_VIEW;
   const [bx, by, bw, bh] = room.box;
   const aspect = bh / bw;
@@ -56,6 +60,17 @@ export function MapSvg({ area, tables, counts, onSelect }: Props) {
   useEffect(() => {
     setView({ x: bx, y: by, w: bw });
   }, [area.id, bx, by, bw]);
+
+  // Bring a requested table into view (declared after the reset effect so it wins on room change).
+  useEffect(() => {
+    if (!panTo) return;
+    const t = tables.find((x) => x.id === panTo.tableId);
+    if (!t) return;
+    const w = Math.min(bw, Math.max(bw / MAX_ZOOM, (t.w * area.map_w) / 0.18)); // table ~18% of view width
+    setView(clamp({ w, x: t.x * area.map_w - w / 2, y: t.y * area.map_h - (w * aspect) / 2 }));
+    wrapRef.current?.scrollIntoView?.({ block: 'nearest' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panTo?.nonce, panTo?.tableId]);
 
   const zoomAt = useCallback(
     (factor: number, px: number, py: number) => {
@@ -160,7 +175,7 @@ export function MapSvg({ area, tables, counts, onSelect }: Props) {
             const state = c.assigned === 0 ? 'empty' : c.arrived === c.assigned ? 'done' : 'open';
             const small = h < 85;
             const fs = Math.max(22, Math.min(54, Math.min(w, h) * 0.36));
-            const summary = `Table ${t.id}, ${c.arrived} of ${c.assigned} arrived`;
+            const summary = `Table ${t.id}, ${c.arrived} of ${c.assigned} arrived${t.id === highlightId ? ', selected' : ''}`;
             return (
               <g
                 key={t.id}
@@ -178,6 +193,18 @@ export function MapSvg({ area, tables, counts, onSelect }: Props) {
                 ) : (
                   <rect x={cx - w / 2} y={cy - h / 2} width={w} height={h} rx={8} />
                 )}
+                {t.id === highlightId &&
+                  (t.shape === 'round' ? (
+                    <g className="hl" pointerEvents="none">
+                      <circle cx={cx} cy={cy} r={w / 2 + 12} className="hl-halo" />
+                      <circle cx={cx} cy={cy} r={w / 2 + 12} className="hl-ring" />
+                    </g>
+                  ) : (
+                    <g className="hl" pointerEvents="none">
+                      <rect x={cx - w / 2 - 12} y={cy - h / 2 - 12} width={w + 24} height={h + 24} rx={16} className="hl-halo" />
+                      <rect x={cx - w / 2 - 12} y={cy - h / 2 - 12} width={w + 24} height={h + 24} rx={16} className="hl-ring" />
+                    </g>
+                  ))}
                 {small ? (
                   <text x={cx} y={cy + fs * 0.35} fontSize={Math.min(fs, h * 0.42)} textAnchor="middle" className="tbl-num">
                     {t.label} · {c.arrived}/{c.assigned}

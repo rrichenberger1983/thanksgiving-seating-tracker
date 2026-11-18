@@ -1,11 +1,12 @@
 # Testing — what was run, and what was not
 
-## Automated (run with `npm test`; 57 tests, all passing on 2026-11-18)
+## Automated (run with `npm test`; 72 tests, all passing on 2026-11-18)
 | Area | How | Result |
 |---|---|---|
 | Table counts & numbering (MD 31 / AR 12 / 200 10 / ES 6 = 59), unique IDs, in-bounds, no overlaps | `tests/layout.test.ts` | pass |
 | Search (first name / last initial), merge & stale-update rules, dashboard totals, input validation, room/table consistency | `tests/logic.test.ts` | pass |
 | Schema, **RLS**, anon/non-staff denial, column grants, check-in / undo, version-based stale-write rejection, reassignment, validation constraints | `tests/db.test.ts` — real Postgres engine (PGlite) with a stand-in for Supabase's `auth` schema | pass |
+| Guest -> table navigation: tapping a guest name/row opens Dining Maps in the right room, outlines the table, zooms to it, opens the table sheet; Check In / Undo / Edit never navigate and tapping never checks in; missing table shows a notice; outline clears on selecting another table or leaving the map; end-to-end through the real app shell | `tests/navigation.test.tsx` — fake Supabase client | pass |
 | Shared-username login: username `thanksgiving` (case-insensitive) maps to the build-time email, any other username is rejected without a request, generic error text, no email/Supabase text leaked, cosmetic lockout | `tests/login.test.tsx` — fake Supabase client | pass |
 | Hook behaviour: no check-in shown until DB confirms, failed save -> error + Retry, stale write -> latest shown, realtime merge, refresh + re-subscribe on resume/online/offline | `tests/useData.test.ts` — fake Supabase client | pass |
 | True simultaneous writers (20 connections x 25 rounds: exactly one winner each; blocked-writer re-check) | `scripts/concurrency-check.mjs` against a throwaway real Postgres 17 (run once, outside `npm test`) | pass |
@@ -29,3 +30,4 @@
 8. Add Guest: add, edit, reassign to another room; it appears on the other device.
 9. Wrong username and wrong password both show the same "Sign-in failed" message. (A real Auth user that is not in `public.staff` shows "Not authorized" and no data.)
 10. Add to Home Screen; launches full-screen.
+11. Guests tab: tap a guest's NAME -> Dining Maps opens in their room, the table is outlined in purple and zoomed into view, and the table sheet shows the guest (nobody is checked in by the tap). Close the sheet: the outline stays. Tap another table: the outline moves away. Check In from the sheet works. Try on both iPhone and iPad.
