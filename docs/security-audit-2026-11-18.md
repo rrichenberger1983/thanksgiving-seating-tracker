@@ -29,5 +29,6 @@
 | 4 | Low | All staff can see and edit all guests; only the last editor (`updated_by`) is recorded, no history | By design for MVP |
 | 5 | Info | Supabase Security Advisors not run (no access to the project from this session) | Run Dashboard -> Advisors -> Security after setup; expect no RLS warnings |
 | 6 | Info | Real-name data is not authorized yet | See docs/PRIVACY-AND-ACCESS.md |
+| 7 | Low | Shared login (added later the same day): one account for all staff, so no per-person accountability and revocation is all-or-nothing. The shared email is public in the page code; the password is not stored anywhere. A weak/guessable password is the main risk | Use a long unique password; rely on Supabase Auth rate limits; rotate after the event |
 
 No Critical or High findings.

@@ -21,6 +21,7 @@ MVP built and tested (see docs/TESTING.md). Remaining: Supabase setup by the own
 - Fictional data only until the facility authorizes real data (see docs/PRIVACY-AND-ACCESS.md). Never claim HIPAA compliance.
 - RLS ON for every table; no policy = no access; nothing granted to `anon`/`public`. Access requires a row in `public.staff`, not just a login.
 - Public sign-up OFF in Supabase Auth. Accounts are created by an admin only.
+- Login is a fixed shared username (`thanksgiving`, case-insensitive) mapped to the Auth email in `VITE_STAFF_LOGIN_EMAIL` (public build-time value). The password is never in code, env vars, the repo, or GitHub variables. One generic error for every failed sign-in. Still goes through Supabase email/password auth, RLS, and the `public.staff` allowlist.
 - Least privilege: staff get column-level grants only (no delete, no version/timestamp writes). Server trigger controls version, timestamps, `updated_by`.
 - Only the Supabase URL and *publishable* key ever appear in client code/build. Never the service-role/secret key, never in the repo, chat, or GitHub Actions.
 - Every SECURITY DEFINER function sets `search_path = ''`.

@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { configured, supabase } from './supabase';
+import { configured, staffLoginEmail, supabase } from './supabase';
 import { useData, type DataApi } from './useData';
 import { GuestsView } from './components/GuestsView';
 import { MapsView } from './components/MapsView';
 import { GuestForm } from './components/GuestForm';
+import { Login } from './components/Login';
 
 type Tab = 'guests' | 'maps' | 'add';
 
 export default function App() {
-  if (!configured) {
+  if (!configured || !staffLoginEmail) {
     return (
       <main className="center-card">
         <h1>Setup needed</h1>
@@ -128,55 +129,5 @@ function Header({ data }: { data: DataApi }) {
         <button className="btn-link" onClick={() => void supabase?.auth.signOut()}>Sign out</button>
       </div>
     </header>
-  );
-}
-
-function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [fails, setFails] = useState(0);
-  const [lockUntil, setLockUntil] = useState(0);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase || busy) return;
-    if (Date.now() < lockUntil) {
-      setMsg('Too many attempts. Wait 30 seconds and try again.');
-      return;
-    }
-    setBusy(true);
-    setMsg('');
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    setBusy(false);
-    if (error) {
-      const n = fails + 1;
-      setFails(n);
-      if (n >= 5) {
-        setLockUntil(Date.now() + 30_000);
-        setFails(0);
-        setMsg('Too many attempts. Wait 30 seconds and try again.');
-      } else setMsg('Sign-in failed. Check your email and password.');
-    }
-  };
-
-  return (
-    <main className="center-card">
-      <h1>Thanksgiving Seating</h1>
-      <p>Staff sign-in</p>
-      <form className="form" onSubmit={submit}>
-        <label>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
-        </label>
-        <label>
-          Password
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
-        </label>
-        {msg && <div className="banner banner-err" role="alert">{msg}</div>}
-        <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
-      </form>
-    </main>
   );
 }

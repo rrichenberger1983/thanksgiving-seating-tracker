@@ -30,6 +30,8 @@ jobs:
           # Public values (project URL + publishable key). Set under Settings -> Secrets and variables -> Actions -> Variables.
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          # Email of the ONE shared staff Auth user (public; not a secret). The password is never stored here.
+          VITE_STAFF_LOGIN_EMAIL: ${{ vars.STAFF_LOGIN_EMAIL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -11,5 +11,5 @@ Start with **[docs/SETUP.md](docs/SETUP.md)**. Also: [privacy & access](docs/PRI
 ```bash
 npm ci
 npm test
-VITE_SUPABASE_URL=... VITE_SUPABASE_PUBLISHABLE_KEY=... npm run dev
+VITE_SUPABASE_URL=... VITE_SUPABASE_PUBLISHABLE_KEY=... VITE_STAFF_LOGIN_EMAIL=... npm run dev
 ```

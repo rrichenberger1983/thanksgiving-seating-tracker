@@ -103,3 +103,11 @@ export function validateGuest(input: GuestInput, tables: TableRow[]): FieldError
 }
 
 export const guestLabel = (g: Pick<Guest, 'first_name' | 'last_initial'>) => `${g.first_name} ${g.last_initial}.`;
+
+export const STAFF_USERNAME = 'thanksgiving';
+
+/** Maps the fixed shared username (case-insensitive) to the Auth email. Anything else -> null. */
+export function resolveLoginEmail(username: string, staffEmail: string): string | null {
+  if (!staffEmail) return null;
+  return username.trim().toLowerCase() === STAFF_USERNAME ? staffEmail : null;
+}
