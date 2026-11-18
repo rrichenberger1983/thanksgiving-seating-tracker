@@ -143,23 +143,70 @@ const ring = (c: HTMLElement) => c.querySelectorAll('.hl-ring');
 describe('Dining Maps: focus request', () => {
   const focus = { tableId: 'AR-03', guestId: 'g1', nonce: 1 };
 
-  it('selects the room, outlines the table, zooms to it, and opens the table sheet', () => {
+  it('selects the room, shows the WHOLE room (Fit), outlines the table, and opens the table sheet', () => {
     const { container } = render(<MapsView data={mkData([sam])} focus={focus} />);
     expect(screen.getByRole('tab', { name: /Activity Room/ }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('dialog', { name: 'Table AR-03' })).toBeTruthy();
     expect(ring(container)).toHaveLength(1);
     const g = ring(container)[0].closest('g.tbl')!;
     expect(g.getAttribute('aria-label')).toMatch(/Table AR-03.*selected/);
-    // located guest is marked in the sheet
     expect(screen.getByText('Sam K.').closest('li')!.className).toMatch(/guest-focus/);
-    // zoomed in and centered on the table
+    // Not zoomed or cropped: the viewBox is exactly the room's Fit box
+    expect(viewBox(container)).toEqual(ROOM_VIEWS.AR.box);
+  });
+
+  it('every table of the room is inside the view (nothing cropped), with the outlined one among them', () => {
+    const { container } = render(<MapsView data={mkData([sam])} focus={focus} />);
     const [x, y, w, h] = viewBox(container);
+    for (const t of tables.filter((r) => r.area_id === 'AR')) {
+      const hw = (t.w * 2016) / 2, hh = (t.h * 1512) / 2, cx = t.x * 2016, cy = t.y * 1512;
+      expect(cx - hw).toBeGreaterThanOrEqual(x); expect(cx + hw).toBeLessThanOrEqual(x + w);
+      expect(cy - hh).toBeGreaterThanOrEqual(y); expect(cy + hh).toBeLessThanOrEqual(y + h);
+    }
+    expect(container.querySelectorAll('g.tbl')).toHaveLength(12);
+  });
+
+  it('is the same in all four dining areas (Fit view, outline present, sheet open)', () => {
+    for (const [areaId, tableId, count] of [['MD', 'MD-31', 31], ['AR', 'AR-12', 12], ['200', '200-10', 10], ['ES', 'ES-06', 6]] as const) {
+      const g = mkGuest({ id: 'gx', table_id: tableId });
+      const { container, unmount } = render(<MapsView data={mkData([g])} focus={{ tableId, guestId: 'gx', nonce: 7 }} />);
+      expect(viewBox(container)).toEqual(ROOM_VIEWS[areaId].box);
+      expect(container.querySelectorAll('g.tbl')).toHaveLength(count);
+      expect(ring(container)).toHaveLength(1);
+      expect(screen.getByRole('dialog', { name: `Table ${tableId}` })).toBeTruthy();
+      unmount();
+    }
+  });
+
+  it('the table sheet is a compact non-dimming panel, so the map and outline stay visible', () => {
+    const { container } = render(<MapsView data={mkData([sam])} focus={focus} />);
+    expect(container.ownerDocument.querySelector('.backdrop.peek')).toBeTruthy();
+    expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('false');
+    expect(container.querySelector('section')!.className).toMatch(/sheet-open/);
+    expect(ring(container)).toHaveLength(1);
+  });
+
+  it('manual zoom controls still work after navigation, and Fit returns to the full room', () => {
+    const { container } = render(<MapsView data={mkData([sam])} focus={focus} />);
     const base = ROOM_VIEWS.AR.box;
-    expect(w).toBeLessThan(base[2]);
-    const t = tables.find((r) => r.id === 'AR-03')!;
-    const [cx, cy] = [t.x * 2016, t.y * 1512];
-    expect(cx).toBeGreaterThan(x); expect(cx).toBeLessThan(x + w);
-    expect(cy).toBeGreaterThan(y); expect(cy).toBeLessThan(y + h);
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+    expect(viewBox(container)[2]).toBeLessThan(base[2]);
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+    const zoomed = viewBox(container)[2];
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom out' }));
+    expect(viewBox(container)[2]).toBeGreaterThan(zoomed);
+    fireEvent.click(screen.getByRole('button', { name: 'Fit' }));
+    expect(viewBox(container)).toEqual(base);
+    expect(ring(container)).toHaveLength(1); // outline survives zooming
+  });
+
+  it('a new navigation request while zoomed in resets to the full room', () => {
+    const data = mkData([sam]);
+    const { container, rerender } = render(<MapsView data={data} focus={focus} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+    expect(viewBox(container)[2]).toBeLessThan(ROOM_VIEWS.AR.box[2]);
+    rerender(<MapsView data={data} focus={{ ...focus, nonce: 99 }} />);
+    expect(viewBox(container)).toEqual(ROOM_VIEWS.AR.box);
   });
 
   it('works for another room (Main Dining)', () => {

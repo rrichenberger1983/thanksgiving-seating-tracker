@@ -1,12 +1,12 @@
 # Testing — what was run, and what was not
 
-## Automated (run with `npm test`; 72 tests, all passing on 2026-11-18)
+## Automated (run with `npm test`; 77 tests, all passing on 2026-11-18)
 | Area | How | Result |
 |---|---|---|
 | Table counts & numbering (MD 31 / AR 12 / 200 10 / ES 6 = 59), unique IDs, in-bounds, no overlaps | `tests/layout.test.ts` | pass |
 | Search (first name / last initial), merge & stale-update rules, dashboard totals, input validation, room/table consistency | `tests/logic.test.ts` | pass |
 | Schema, **RLS**, anon/non-staff denial, column grants, check-in / undo, version-based stale-write rejection, reassignment, validation constraints | `tests/db.test.ts` — real Postgres engine (PGlite) with a stand-in for Supabase's `auth` schema | pass |
-| Guest -> table navigation: tapping a guest name/row opens Dining Maps in the right room, outlines the table, zooms to it, opens the table sheet; Check In / Undo / Edit never navigate and tapping never checks in; missing table shows a notice; outline clears on selecting another table or leaving the map; end-to-end through the real app shell | `tests/navigation.test.tsx` — fake Supabase client | pass |
+| Guest -> table navigation: tapping a guest name/row opens Dining Maps in the right room showing the WHOLE room (existing Fit view, nothing cropped), outlines the table, opens a compact table sheet that leaves the map visible; manual zoom/Fit still work afterward; Check In / Undo / Edit never navigate and tapping never checks in; missing table shows a notice; outline clears on selecting another table or leaving the map; end-to-end through the real app shell | `tests/navigation.test.tsx` — fake Supabase client | pass |
 | Shared-username login: username `thanksgiving` (case-insensitive) maps to the build-time email, any other username is rejected without a request, generic error text, no email/Supabase text leaked, cosmetic lockout | `tests/login.test.tsx` — fake Supabase client | pass |
 | Hook behaviour: no check-in shown until DB confirms, failed save -> error + Retry, stale write -> latest shown, realtime merge, refresh + re-subscribe on resume/online/offline | `tests/useData.test.ts` — fake Supabase client | pass |
 | True simultaneous writers (20 connections x 25 rounds: exactly one winner each; blocked-writer re-check) | `scripts/concurrency-check.mjs` against a throwaway real Postgres 17 (run once, outside `npm test`) | pass |
@@ -16,7 +16,7 @@
 ## NOT covered by automation (limits)
 - The **live Supabase project**: Auth settings (sign-up off), Realtime delivery over the network, and RLS as enforced by Supabase's own `auth.uid()` were **not** tested here — the Supabase project is in an account this session cannot reach. The SQL is the same file the tests ran; the stand-in only replaces `auth.uid()`.
 - Real **reconnection after interrupted connectivity** (Wi-Fi drop with a live websocket) — only simulated with a fake client.
-- **Mobile usability** on real iPhones/iPads (tap sizes, pinch/pan feel, PWA install) — layout was reviewed from rendered images only.
+- **Mobile usability** on real iPhones/iPads (tap sizes, pinch/pan feel, PWA install). The guest-to-table map layout was measured in desktop Chrome with phone/iPad viewport emulation (all tables + outline above the sheet in all 4 rooms), not on real devices.
 - The **deployed site** is verified separately (see final report).
 
 ## Physical-device checklist (5 minutes, two devices)
@@ -30,4 +30,4 @@
 8. Add Guest: add, edit, reassign to another room; it appears on the other device.
 9. Wrong username and wrong password both show the same "Sign-in failed" message. (A real Auth user that is not in `public.staff` shows "Not authorized" and no data.)
 10. Add to Home Screen; launches full-screen.
-11. Guests tab: tap a guest's NAME -> Dining Maps opens in their room, the table is outlined in purple and zoomed into view, and the table sheet shows the guest (nobody is checked in by the tap). Close the sheet: the outline stays. Tap another table: the outline moves away. Check In from the sheet works. Try on both iPhone and iPad.
+11. Guests tab: tap a guest's NAME -> Dining Maps opens in their room, the whole room is shown (not zoomed in), the table is outlined in purple, and a compact sheet at the bottom shows the guest (nobody is checked in by the tap). The map stays visible above the sheet; pinch-zoom still works. Close the sheet: the outline stays. Tap another table: the outline moves away. Check In from the sheet works. Try on both iPhone and iPad.

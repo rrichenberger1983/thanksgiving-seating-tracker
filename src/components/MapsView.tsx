@@ -57,7 +57,7 @@ export function MapsView({ data, focus = null }: { data: DataApi; focus?: MapFoc
   };
 
   return (
-    <section>
+    <section className={openTable ? 'sheet-open' : undefined}>
       <div className="room-tabs" role="tablist" aria-label="Dining area">
         {data.areas.map((a) => {
           const c = roomCounts(a.id);
@@ -88,7 +88,7 @@ export function MapsView({ data, focus = null }: { data: DataApi; focus?: MapFoc
           counts={counts}
           onSelect={selectTable}
           highlightId={highlight}
-          panTo={focus && focusTable?.area_id === area.id ? { tableId: focus.tableId, nonce: focus.nonce } : null}
+          fitKey={focus && focusTable?.area_id === area.id ? focus.nonce : null}
         />
       ) : (
         <div className="table-grid">
@@ -128,7 +128,7 @@ function TableSheet({ tableId, data, onClose, focusGuestId = null }: { tableId: 
   const arrived = here.filter((g) => g.checked_in).length;
 
   return (
-    <Modal title={`Table ${tableId}`} onClose={onClose}>
+    <Modal title={`Table ${tableId}`} onClose={onClose} peek>
       <p className="sheet-sub">{roomName} · {arrived} of {here.length} arrived</p>
       {mode === 'list' && (
         <>

@@ -10,8 +10,8 @@ interface Props {
   onSelect: (tableId: string) => void;
   /** Table to outline until the parent clears it. */
   highlightId?: string | null;
-  /** Pan/zoom so this table is centered; re-runs whenever nonce changes. */
-  panTo?: { tableId: string; nonce: number } | null;
+  /** When this value changes, reset to the full-room Fit view (and scroll the map into view). */
+  fitKey?: number | null;
 }
 
 interface View { x: number; y: number; w: number }
@@ -30,7 +30,7 @@ function FeatureShape({ f }: { f: Feature }) {
   }
 }
 
-export function MapSvg({ area, tables, counts, onSelect, highlightId = null, panTo = null }: Props) {
+export function MapSvg({ area, tables, counts, onSelect, highlightId = null, fitKey = null }: Props) {
   const room = ROOM_VIEWS[area.id] ?? DEFAULT_VIEW;
   const [bx, by, bw, bh] = room.box;
   const aspect = bh / bw;
@@ -61,16 +61,14 @@ export function MapSvg({ area, tables, counts, onSelect, highlightId = null, pan
     setView({ x: bx, y: by, w: bw });
   }, [area.id, bx, by, bw]);
 
-  // Bring a requested table into view (declared after the reset effect so it wins on room change).
+  // Guest -> table navigation: show the WHOLE room (same as the Fit button) so the outlined table
+  // is seen in context. Declared after the reset effect so it wins on a room change.
   useEffect(() => {
-    if (!panTo) return;
-    const t = tables.find((x) => x.id === panTo.tableId);
-    if (!t) return;
-    const w = Math.min(bw, Math.max(bw / MAX_ZOOM, (t.w * area.map_w) / 0.18)); // table ~18% of view width
-    setView(clamp({ w, x: t.x * area.map_w - w / 2, y: t.y * area.map_h - (w * aspect) / 2 }));
-    wrapRef.current?.scrollIntoView?.({ block: 'nearest' });
+    if (fitKey == null) return;
+    setView({ x: bx, y: by, w: bw });
+    wrapRef.current?.scrollIntoView?.({ block: 'start' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panTo?.nonce, panTo?.tableId]);
+  }, [fitKey]);
 
   const zoomAt = useCallback(
     (factor: number, px: number, py: number) => {
