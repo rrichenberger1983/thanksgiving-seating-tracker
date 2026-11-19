@@ -2,7 +2,7 @@
 
 Mobile-first PWA for facility staff: find a guest, see the dining-room maps, check guests in, and see changes from other devices live.
 
-- **Rooms/tables:** Main Dining 31, Activity Room 12, 200 Hall Pod 10, East Side Dining 6 (59 total).
+- **Rooms/tables:** Main Dining 31, Activity Room 13, 200 Hall Pod 10, East Side Dining 6 (60 total).
 - **Stores only:** first name, last initial, table, check-in status.
 - **Stack:** React + TypeScript + Vite, Supabase (Postgres, Auth, Realtime), GitHub Pages.
 

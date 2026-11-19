@@ -39,9 +39,9 @@ beforeAll(async () => {
 });
 
 describe('seed data', () => {
-  it('has 4 areas and 59 tables with correct per-room counts', async () => {
+  it('has 4 areas and 60 tables with correct per-room counts', async () => {
     const r = await q(`select area_id, count(*)::int n from public.dining_tables group by 1 order by 1`);
-    expect(Object.fromEntries(r.rows.map((x) => [x.area_id, x.n]))).toEqual({ '200': 10, AR: 12, ES: 6, MD: 31 });
+    expect(Object.fromEntries(r.rows.map((x) => [x.area_id, x.n]))).toEqual({ '200': 10, AR: 13, ES: 6, MD: 31 });
   });
   it('every table belongs to an existing area; no capacities invented', async () => {
     const r = await q(`select count(*)::int n from public.dining_tables t left join public.dining_areas a on a.id=t.area_id where a.id is null`);
@@ -73,7 +73,7 @@ describe('RLS: who can see/do what', () => {
   it('staff can read areas/tables and only their own staff row', async () => {
     await as('authenticated', STAFF, async () => {
       expect((await q(`select * from public.dining_areas`)).rows).toHaveLength(4);
-      expect((await q(`select * from public.dining_tables`)).rows).toHaveLength(59);
+      expect((await q(`select * from public.dining_tables`)).rows).toHaveLength(60);
       expect((await q(`select user_id from public.staff`)).rows.map((r) => r.user_id)).toEqual([STAFF]);
     });
   });
@@ -160,5 +160,29 @@ describe('check-in / undo and stale-write protection', () => {
   it('realtime publication includes guests (when the publication exists)', async () => {
     const r = await q(`select tablename from pg_publication_tables where pubname='supabase_realtime'`);
     expect(r.rows.map((x) => x.tablename)).toContain('guests');
+  });
+});
+
+describe('migration 0003: add AR-13 (existing projects)', () => {
+  const mig = () => fs.readFileSync('supabase/migrations/0003_add_ar13.sql', 'utf8');
+  it('is additive and idempotent, matches the generated seed row, and leaves guests/other tables untouched', async () => {
+    const before = await q(`select id, x, y, w, h from public.dining_tables where id <> 'AR-13' order by id`);
+    const ar13Seed = (await q(`select * from public.dining_tables where id='AR-13'`)).rows[0];
+    // Simulate a project that ran the older setup.sql (no AR-13) and already has a guest assigned.
+    await db.exec(`delete from public.dining_tables where id='AR-13'`);
+    await db.exec(`insert into public.guests (first_name,last_initial,table_id) values ('Mig','R','AR-12')`);
+    expect((await q(`select count(*)::int n from public.dining_tables`)).rows[0].n).toBe(59);
+    await db.exec(mig());
+    await db.exec(mig()); // run twice
+    expect((await q(`select count(*)::int n from public.dining_tables`)).rows[0].n).toBe(60);
+    expect((await q(`select * from public.dining_tables where id='AR-13'`)).rows[0]).toEqual(ar13Seed);
+    const after = await q(`select id, x, y, w, h from public.dining_tables where id <> 'AR-13' order by id`);
+    expect(after.rows).toEqual(before.rows);
+    expect((await q(`select count(*)::int n from public.guests where first_name='Mig' and table_id='AR-12'`)).rows[0].n).toBe(1);
+  });
+  it('a guest can be assigned to AR-13 and checked in (same rules as every table)', async () => {
+    const r = await as('authenticated', STAFF, () => q(`insert into public.guests (first_name,last_initial,table_id) values ('Thirteen','T','AR-13') returning id, version`));
+    const c = await as('authenticated', STAFF, () => q(`update public.guests set checked_in=true where id=$1 and version=$2 returning checked_in, version`, [r.rows[0].id, r.rows[0].version]));
+    expect(c.rows[0]).toEqual({ checked_in: true, version: 2 });
   });
 });

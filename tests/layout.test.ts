@@ -7,10 +7,10 @@ const byArea = (id: string) => layout.tables.filter((t) => t.area_id === id);
 describe('floor-plan layout (from the four photos)', () => {
   it('has the verified table count per room', () => {
     expect(byArea('MD')).toHaveLength(31); // 27 printed + 4 hand-drawn (reconciled from photo 1)
-    expect(byArea('AR')).toHaveLength(12);
+    expect(byArea('AR')).toHaveLength(13);
     expect(byArea('200')).toHaveLength(10);
     expect(byArea('ES')).toHaveLength(6);
-    expect(layout.tables).toHaveLength(59);
+    expect(layout.tables).toHaveLength(60);
   });
 
   it('numbers tables with stable, unique, zero-padded IDs', () => {
@@ -19,7 +19,7 @@ describe('floor-plan layout (from the four photos)', () => {
     const expectIds = (prefix: string, n: number) =>
       Array.from({ length: n }, (_, i) => `${prefix}-${String(i + 1).padStart(2, '0')}`);
     expect(byArea('MD').map((t) => t.id)).toEqual(expectIds('MD', 31));
-    expect(byArea('AR').map((t) => t.id)).toEqual(expectIds('AR', 12));
+    expect(byArea('AR').map((t) => t.id)).toEqual(expectIds('AR', 13));
     expect(byArea('200').map((t) => t.id)).toEqual(expectIds('200', 10));
     expect(byArea('ES').map((t) => t.id)).toEqual(expectIds('ES', 6));
   });

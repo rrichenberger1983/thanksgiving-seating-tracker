@@ -3,7 +3,7 @@
 ## Automated (run with `npm test`; 77 tests, all passing on 2026-11-18)
 | Area | How | Result |
 |---|---|---|
-| Table counts & numbering (MD 31 / AR 12 / 200 10 / ES 6 = 59), unique IDs, in-bounds, no overlaps | `tests/layout.test.ts` | pass |
+| Table counts & numbering (MD 31 / AR 13 / 200 10 / ES 6 = 60), unique IDs, in-bounds, no overlaps | `tests/layout.test.ts` | pass |
 | Search (first name / last initial), merge & stale-update rules, dashboard totals, input validation, room/table consistency | `tests/logic.test.ts` | pass |
 | Schema, **RLS**, anon/non-staff denial, column grants, check-in / undo, version-based stale-write rejection, reassignment, validation constraints | `tests/db.test.ts` — real Postgres engine (PGlite) with a stand-in for Supabase's `auth` schema | pass |
 | Guest -> table navigation: tapping a guest name/row opens Dining Maps in the right room showing the WHOLE room (existing Fit view, nothing cropped), outlines the table, opens a compact table sheet that leaves the map visible; manual zoom/Fit still work afterward; Check In / Undo / Edit never navigate and tapping never checks in; missing table shows a notice; outline clears on selecting another table or leaving the map; end-to-end through the real app shell | `tests/navigation.test.tsx` — fake Supabase client | pass |

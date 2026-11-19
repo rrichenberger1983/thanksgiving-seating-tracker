@@ -163,11 +163,11 @@ describe('Dining Maps: focus request', () => {
       expect(cx - hw).toBeGreaterThanOrEqual(x); expect(cx + hw).toBeLessThanOrEqual(x + w);
       expect(cy - hh).toBeGreaterThanOrEqual(y); expect(cy + hh).toBeLessThanOrEqual(y + h);
     }
-    expect(container.querySelectorAll('g.tbl')).toHaveLength(12);
+    expect(container.querySelectorAll('g.tbl')).toHaveLength(13);
   });
 
   it('is the same in all four dining areas (Fit view, outline present, sheet open)', () => {
-    for (const [areaId, tableId, count] of [['MD', 'MD-31', 31], ['AR', 'AR-12', 12], ['200', '200-10', 10], ['ES', 'ES-06', 6]] as const) {
+    for (const [areaId, tableId, count] of [['MD', 'MD-31', 31], ['AR', 'AR-13', 13], ['200', '200-10', 10], ['ES', 'ES-06', 6]] as const) {
       const g = mkGuest({ id: 'gx', table_id: tableId });
       const { container, unmount } = render(<MapsView data={mkData([g])} focus={{ tableId, guestId: 'gx', nonce: 7 }} />);
       expect(viewBox(container)).toEqual(ROOM_VIEWS[areaId].box);

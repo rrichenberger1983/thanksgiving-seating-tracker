@@ -89,10 +89,10 @@ async function mount() {
 }
 
 describe('useData', () => {
-  it('loads areas, 59 tables, guests and goes Live when subscribed', async () => {
+  it('loads areas, 60 tables, guests and goes Live when subscribed', async () => {
     const { result } = await mount();
     expect(result.current.areas).toHaveLength(4);
-    expect(result.current.tables).toHaveLength(59);
+    expect(result.current.tables).toHaveLength(60);
     expect(result.current.guests).toHaveLength(1);
     expect(result.current.conn).toBe('live');
   });

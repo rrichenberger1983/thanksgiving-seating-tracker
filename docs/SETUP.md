@@ -1,7 +1,7 @@
 # Setup (about 15 minutes, all doable from an iPad)
 
 ## A. Supabase (the dedicated Thanksgiving project)
-1. Dashboard -> **SQL Editor** -> New query -> paste all of `supabase/setup.sql` -> Run. (Creates tables, security rules, the 59 tables, live updates.)
+1. Dashboard -> **SQL Editor** -> New query -> paste all of `supabase/setup.sql` -> Run. (Creates tables, security rules, the 60 tables, live updates.)
 2. **Turn off public sign-up:** Authentication -> Sign In / Providers -> turn **off** "Allow new users to sign up". Leave "Allow anonymous sign-ins" off.
 3. **Create the ONE shared staff login:** Authentication -> Users -> Add user -> Create new user. Email: any address you choose (e.g. `thanksgiving-staff@yourdomain.org`; no emails are sent, so it does not need to receive mail). Password: a long, unique one you hand to staff verbally or on paper. Tick *Auto Confirm User*.
 4. **Authorize it:** SQL Editor -> paste the "GRANT" snippet from `supabase/staff_admin.sql` with that same email -> Run. A login without a row in `public.staff` sees nothing.
